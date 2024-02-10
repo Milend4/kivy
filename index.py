@@ -1,27 +1,26 @@
-from kivy.app import App
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.uix.filechooser import FileChooserIconView
 from kivy.garden.mapview import MapMarker
-from tinydb import TinyDB, Query
+import pyrebase
+from kivymd.toast import toast
+from kivymd.app import MDApp
 
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyACLqaj5emBwWFtBOQiNnXwKwJDDIC60-c",
-  authDomain: "reciclatech-e91ee.firebaseapp.com",
-  projectId: "reciclatech-e91ee",
-  storageBucket: "reciclatech-e91ee.appspot.com",
-  messagingSenderId: "396519552913",
-  appId: "1:396519552913:web:14604b8ccbbb34c2fccc30",
-  measurementId: "G-B4YGM4SSCS"
-};
+firebaseConfig = {
+  'apiKey': "AIzaSyACLqaj5emBwWFtBOQiNnXwKwJDDIC60-c",
+  'authDomain': "reciclatech-e91ee.firebaseapp.com",
+  'projectId': "reciclatech-e91ee",
+  'storageBucket': "reciclatech-e91ee.appspot.com",
+  'messagingSenderId': "396519552913",
+  'appId': "1:396519552913:web:14604b8ccbbb34c2fccc30",
+  'measurementId': "G-B4YGM4SSCS",
+  'databaseURL': "https://reciclatech-e91ee-default-rtdb.firebaseio.com/"
+}
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+firebase = pyrebase.initialize_app(firebaseConfig)
+mAuth = firebase.auth()
+db = firebase.database()
 
 Builder.load_file('ReciclatechApp.kv')
     
@@ -32,7 +31,7 @@ class Login_coletor(Screen):
 
     def __init__(self, **kwargs):
         super(Login_coletor, self).__init__(**kwargs)
-        self.app = App.get_running_app()
+        self.app = MDApp.get_running_app()
 
     def cadastrar_coletor(self):
         self.manager.current = 'cadastro_coletor'
@@ -54,7 +53,7 @@ class Login_usuario(Screen):
 
     def __init__(self, **kwargs):
         super(Login_usuario, self).__init__(**kwargs)
-        self.app = App.get_running_app()
+        self.app = MDApp.get_running_app()
 
     def cadastrar_usuario(self):
         self.manager.current = 'cadastro_usuario'
@@ -77,7 +76,7 @@ class Login_usuario(Screen):
 class Cadastro_coletor(Screen):
     def __init__(self, **kwargs):
         super(Cadastro_coletor, self).__init__(**kwargs)
-        self.app = App.get_running_app()
+        self.app = MDApp.get_running_app()
 
     def cadastrar_coletor(self):
         nome = self.ids.nome.text
@@ -105,7 +104,7 @@ class Cadastro_coletor(Screen):
 class Cadastro_usuario(Screen):
     def __init__(self, **kwargs):
         super(Cadastro_usuario, self).__init__(**kwargs)
-        self.app = App.get_running_app()
+        self.app = MDApp.get_running_app()
 
     def cadastrar_usuario(self):
         nome = self.ids.nome.text
@@ -288,11 +287,8 @@ class Inicial(Screen):
 class Gerenciador(ScreenManager):
     pass
 
-class ReciclatechApp(App):
+class ReciclatechApp(MDApp):
     def build(self):
-        tabela = 'bancodedados.json'
-        self.db = TinyDB(tabela)
-
         gerenciador = Gerenciador()
         gerenciador.add_widget(Inicial(name='inicial'))
         gerenciador.add_widget(Login_coletor(name='login_coletor'))
@@ -325,8 +321,8 @@ class ReciclatechApp(App):
         return gerenciador
     
     def cadastrar_usuario(self, nome, genero, cpf_cnpj, tel, logadouro, numero, estado, bairro, email, senha):
-        if not self.email_verificacao_usu(email):
-            self.db.insert({
+        if not self.email_verificacao_usu(email, senha):
+            db.child("/schedule/").push({
                 'nome': nome,
                 'genero': genero,
                 'cpf_cnpj': cpf_cnpj,
@@ -338,13 +334,12 @@ class ReciclatechApp(App):
                 'email': email,
                 'senha': senha
                 })
-            return True
         else:
             return False
         
-    def cadastrar_coletor(self, nome, genero, cpf, cnpj, empresa, tel, logadouro, numero, estado, bairro, email, senha):
-        if not self.email_verificacao_col(email):
-            self.db.insert({
+    def cadastrar_coletor(self, nome, genero, cpf, cnpj, empresa, tel, logadouro, numero,estado, bairro, email, senha):
+        if not self.email_verificacao_col(email,senha):
+            db.child("/schedule/").push({
                 'nome': nome,
                 'genero': genero,
                 'cpf': cpf,
@@ -358,27 +353,52 @@ class ReciclatechApp(App):
                 'email': email,
                 'senha': senha
                 })
-            return True
         else:
             return False
         
     def login_coletor_bd(self, email, senha):
-        Coletor = Query()
-        coletor_cadastrado = self.db.get((Coletor.email == email) & (Coletor.senha == senha))
-        return coletor_cadastrado
+        try:
+            print(email.text)
+            print(senha.text)
+            mAuth.sign_in_with_email_and_password(email=email.text, senha=senha.text)
+            print('Login')
+         
+        except:
+            toast("Dados inválidos")
     
-    def email_verificacao_col(self, email):
-        Coletor = Query()
-        return bool(self.db.get(Coletor.email == email))
+    def email_verificacao_col(self, email, senha):
+        try:
+            print(email.text)
+            print(senha.text)
+            mAuth.sign_in_with_email_and_password(email=email.text, senha=senha.text)
+            print('Login')
+         
+        except:
+            toast("Dados inválidos")
     
-    def login_usuario_bd(self, email, senha):
-        Usuario = Query()
-        usuario_cadastrado = self.db.get((Usuario.email == email) & (Usuario.senha == senha))
-        return usuario_cadastrado
+    def login_usuario_bd(self, email, senha, aviso):
+        try:
+            print(email.text)
+            print(senha.text)
+            mAuth.sign_in_with_email_and_password(email=email.text, senha=senha.text)
+            print('Login')
+         
+        except:
+            aviso.text = "Dados inválidos"
+            aviso.color = 'red'
+        toast("Dados inválidos")
 
-    def email_verificacao_usu(self, email):
-        Usuario = Query()
-        return bool(self.db.get(Usuario.email == email))
+    def email_verificacao_usu(self, email, senha, aviso):
+        try:
+            print(email.text)
+            print(senha.text)
+            mAuth.sign_in_with_email_and_password(email=email.text, senha=senha.text)
+            print('Login')
+         
+        except:
+            aviso.text = "Dados inválidos"
+            aviso.color = 'red'
+            toast("Dados inválidos")
         
     def realizar_login(self):
         email = self.ids.email.text
