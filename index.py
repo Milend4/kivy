@@ -144,15 +144,29 @@ class Registro_usuario(Screen):
 class Entrar_coletor(Screen):
     mensagem = StringProperty("")
 
-    def on_enter(self):
-        super(Entrar_coletor, self).on_enter()
-        coletor = db.child("/schedule/").get().val()
-        if coletor:
-            for col_dado in coletor.values():
-                self.mensagem = f"[b]Bem-vindo, {col_dado['nome']}[b]!"
-                boas_vindas_label = Label(text=self.mensagem, markup=True, color=(0, 0, 0, 1), font_size=24, pos_hint= {'center_x': 0.5, 'center_y': 0.24})
+def on_enter(self):
+    super(Entrar_usuario, self).on_enter()
+    try:
+        # Acessando o widget de entrada de e-mail diretamente pelo ID
+        email = self.ids.email.text
+        usuarios = db.child("schedule").get().val()  
+        if usuarios:
+            usuario_encontrado = None
+            for key, value in usuarios.items():
+                if value.get("email") == email:
+                    usuario_encontrado = value
+                    print("Usuário encontrado com o e-mail", email)
+                    break
+            if usuario_encontrado:
+                self.mensagem = f"[b]Bem-vindo, {usuario_encontrado['nome']}[/b]!"
+                boas_vindas_label = Label(text=self.mensagem, markup=True, color=(0, 0, 0, 1), font_size=24, pos_hint={'center_x': 0.5, 'center_y': 0.24})
                 self.ids.layout.add_widget(boas_vindas_label)
-                break 
+            else:
+                print("Nenhum usuário encontrado com o e-mail", email)
+        else:
+            print("Nenhum usuário encontrado")
+    except Exception as e:
+        print("Ocorreu um erro durante a consulta:", e)
 
     def tela_coletor(self):
         super(Entrar_coletor, self).on_enter()
@@ -175,18 +189,26 @@ class Entrar_usuario(Screen):
 
     def on_enter(self):
         super(Entrar_usuario, self).on_enter()
-        usuario = db.child("/schedule/").get().val()
-        if usuario:
-            for usu_dado in usuario.values():
-                self.mensagem = f"[b]Bem-vindo, {usu_dado['nome']}[b]!"
-                boas_vindas_label = Label(text=self.mensagem, markup=True, color=(0, 0, 0, 1), font_size=24, pos_hint= {'center_x': 0.5, 'center_y': 0.24})
-                self.ids.layout.add_widget(boas_vindas_label)
-                break 
-
-    def __init__(self, **kwargs):
-        super(Entrar_usuario, self).__init__(**kwargs)
-        self.nome_usuario = ""
-
+        email = self.manager.get_screen('login_usuario').ids.email.text
+        try:
+            usuarios = db.child("schedule").get().val()  
+            if usuarios:
+                usuario_encontrado = None
+                for key, value in usuarios.items():
+                    if value.get("email") == email:
+                        usuario_encontrado = value
+                        print("Usuário encontrado com o e-mail", email)
+                        break
+                if usuario_encontrado:
+                    self.mensagem = f"[b]Bem-vindo, {usuario_encontrado['nome']}[/b]!"
+                    boas_vindas_label = Label(text=self.mensagem, markup=True, color=(0, 0, 0, 1), font_size=24, pos_hint={'center_x': 0.5, 'center_y': 0.24})
+                    self.ids.layout.add_widget(boas_vindas_label)
+                else:
+                    print("Nenhum usuário encontrado com o e-mail", email)
+            else:
+                print("Nenhum usuário encontrado")
+        except Exception as e:
+            print("Ocorreu um erro durante a consulta:", e)
 
     
     def tela_usuario(self):
@@ -351,6 +373,7 @@ class ReciclatechApp(MDApp):
         gerenciador.add_widget(Editar_conta_coletor(name='editar_conta_coletor'))
         gerenciador.add_widget(Escolher_solicitacao(name='escolher_solicitacao'))
         gerenciador.add_widget(Cadastro_usuario(name='registrar_usuario'))
+        gerenciador.add_widget(Cadastro_coletor(name='registrar_coletor'))
   
         return gerenciador
     
