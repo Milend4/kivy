@@ -3,8 +3,10 @@ from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.garden.mapview import MapMarker
 import pyrebase
+from kivy.uix.label import Label
 from kivymd.toast import toast
 from kivymd.app import MDApp
+from kivy.properties import StringProperty
 
 
 firebaseConfig = {
@@ -36,6 +38,7 @@ class Login_coletor(Screen):
     def cadastrar_coletor(self):
         self.manager.current = 'cadastro_coletor'
 
+
     def realizar_login_col(self):
         email = self.ids.email_input.text
         senha = self.ids.senha_input.text
@@ -48,6 +51,7 @@ class Login_coletor(Screen):
                 print('Erro: Email ou senha incorretos.')
         else:
             print('Erro: Preencha todos os campos.')
+
 
 class Login_usuario(Screen):
 
@@ -63,7 +67,7 @@ class Login_usuario(Screen):
         senha = self.ids.senha.text
 
         if email and senha:
-            usuario = self.app.login_coletor_bd(email, senha)
+            usuario = self.app.login_usuario_bd(email, senha)
             if usuario:
                 self.manager.current = 'entrar_usuario'
                 
@@ -118,10 +122,8 @@ class Cadastro_usuario(Screen):
         email = self.ids.email_cadastro.text
         senha = self.ids.senha_cadastro.text
         
-
-        if nome and email and senha and cpf_cnpj and genero and logadouro and bairro and estado and numero and tel:
+        if nome and email and senha and cpf_cnpj and genero and logadouro and bairro and estado and numero and tel :
             if self.app.cadastrar_usuario(nome, genero, cpf_cnpj, tel, logadouro, numero, estado, bairro, email, senha):
-                # Limpar os campos após o cadastro
                 self.ids.nome.text = ''
                 self.ids.genero.text = ''
                 self.manager.current = 'resistrar_usuario'
@@ -140,6 +142,18 @@ class Registro_usuario(Screen):
 
 #passo 4 fazer a tela inicial do coletor
 class Entrar_coletor(Screen):
+    mensagem = StringProperty("")
+
+    def on_enter(self):
+        super(Entrar_coletor, self).on_enter()
+        coletor = db.child("/schedule/").get().val()
+        if coletor:
+            for col_dado in coletor.values():
+                self.mensagem = f"[b]Bem-vindo, {col_dado['nome']}[b]!"
+                boas_vindas_label = Label(text=self.mensagem, markup=True, color=(0, 0, 0, 1), font_size=24, pos_hint= {'center_x': 0.5, 'center_y': 0.24})
+                self.ids.layout.add_widget(boas_vindas_label)
+                break 
+
     def tela_coletor(self):
         super(Entrar_coletor, self).on_enter()
         self.adicionar_mapa()
@@ -157,14 +171,28 @@ class Entrar_coletor(Screen):
         self.manager.current = 'mensagens'
    
 class Entrar_usuario(Screen):
+    mensagem = StringProperty("")
+
+    def on_enter(self):
+        super(Entrar_usuario, self).on_enter()
+        usuario = db.child("/schedule/").get().val()
+        if usuario:
+            for usu_dado in usuario.values():
+                self.mensagem = f"[b]Bem-vindo, {usu_dado['nome']}[b]!"
+                boas_vindas_label = Label(text=self.mensagem, markup=True, color=(0, 0, 0, 1), font_size=24, pos_hint= {'center_x': 0.5, 'center_y': 0.24})
+                self.ids.layout.add_widget(boas_vindas_label)
+                break 
+
     def __init__(self, **kwargs):
         super(Entrar_usuario, self).__init__(**kwargs)
         self.nome_usuario = ""
 
+
+    
     def tela_usuario(self):
         super(Entrar_usuario, self).on_enter()
         self.mapa_recife()
-        self.boas_vindas_usu(self.nome_usuario)
+        
 
     def mapa_recife(self):
         mapview = self.ids.mapview
@@ -284,6 +312,12 @@ class Inicial(Screen):
         marker = MapMarker(lat=37.7749, lon=-122.4194)
         mapview.add_marker(marker)
 
+    def realizar_login_coletor(self):
+        self.manager.get_screen('login_coletor').realizar_login_col(self.manager)
+
+    def realizar_login_usuario(self):
+        self.manager.get_screen('login_usuario').realizar_login(self.manager)
+
 class Gerenciador(ScreenManager):
     pass
 
@@ -321,7 +355,7 @@ class ReciclatechApp(MDApp):
         return gerenciador
     
     def cadastrar_usuario(self, nome, genero, cpf_cnpj, tel, logadouro, numero, estado, bairro, email, senha):
-        if not self.email_verificacao_usu(email, senha):
+        if not self.email_verificacao_usu(email):
             db.child("/schedule/").push({
                 'nome': nome,
                 'genero': genero,
@@ -334,11 +368,12 @@ class ReciclatechApp(MDApp):
                 'email': email,
                 'senha': senha
                 })
+            return True
         else:
             return False
         
     def cadastrar_coletor(self, nome, genero, cpf, cnpj, empresa, tel, logadouro, numero,estado, bairro, email, senha):
-        if not self.email_verificacao_col(email,senha):
+        if not self.email_verificacao_col(email):
             db.child("/schedule/").push({
                 'nome': nome,
                 'genero': genero,
@@ -356,54 +391,49 @@ class ReciclatechApp(MDApp):
         else:
             return False
         
+    def login_usuario_bd(self, email, senha):
+        usuarios = db.child("/schedule/").get().val()
+        if usuarios:
+            for usuario in usuarios.values():
+                if usuario['email'] == email and usuario['senha'] == senha:
+                    toast('Login usuário bem-sucedido')
+                    return True
+        else:
+            toast(f'Erro ao fazer login usuário')
+            return False
+    
+    def email_verificacao_col(self, email):
+        coletores = db.child("/schedule/").get().val()
+        if coletores:
+            for coletor in coletores.values():
+                if coletor['email'] == email:
+                    return True
+  
+        return False
+    
     def login_coletor_bd(self, email, senha):
-        try:
-            print(email.text)
-            print(senha.text)
-            mAuth.sign_in_with_email_and_password(email=email.text, senha=senha.text)
-            print('Login')
-         
-        except:
-            toast("Dados inválidos")
-    
-    def email_verificacao_col(self, email, senha):
-        try:
-            print(email.text)
-            print(senha.text)
-            mAuth.sign_in_with_email_and_password(email=email.text, senha=senha.text)
-            print('Login')
-         
-        except:
-            toast("Dados inválidos")
-    
-    def login_usuario_bd(self, email, senha, aviso):
-        try:
-            print(email.text)
-            print(senha.text)
-            mAuth.sign_in_with_email_and_password(email=email.text, senha=senha.text)
-            print('Login')
-         
-        except:
-            aviso.text = "Dados inválidos"
-            aviso.color = 'red'
-        toast("Dados inválidos")
+        usuarios = db.child("/schedule/").get().val()
+        if usuarios:
+            for usuario in usuarios.values():
+                if usuario['email'] == email and usuario['senha'] == senha:
+                    toast('Login coletor bem-sucedido')
+                    return True
+        else:
+            toast(f'Erro ao fazer login coletor')
+            return False
 
-    def email_verificacao_usu(self, email, senha, aviso):
-        try:
-            print(email.text)
-            print(senha.text)
-            mAuth.sign_in_with_email_and_password(email=email.text, senha=senha.text)
-            print('Login')
-         
-        except:
-            aviso.text = "Dados inválidos"
-            aviso.color = 'red'
-            toast("Dados inválidos")
+    def email_verificacao_usu(self, email):
+        usuarios = db.child("/schedule/").get().val()
+        if usuarios:
+            for usuario in usuarios.values():
+                if usuario['email'] == email:
+                    return True
+        return False
         
     def realizar_login(self):
         email = self.ids.email.text
         senha = self.ids.senha.text
-
+        
         if email and senha:
             usuario = self.app.login_usuario_bd(email, senha)
             coletor = self.app.login_coletor_bd(email, senha)
@@ -412,9 +442,9 @@ class ReciclatechApp(MDApp):
             elif coletor:
                 self.manager.current = 'entrar_coletor'
             else:
-                pass
+                toast('Erro: Email ou senha incorretos.')
         else:
-            pass
+            toast('Erro: Preencha todos os campos.')
       
 if __name__ == '__main__':
     ReciclatechApp().run()

@@ -40,6 +40,8 @@
             pos_hint: {'center_x': 0.5, 'center_y': 0.2}
             on_press: root.entrar_como_usuario() 
 
+        
+
 <Login_coletor>:
     FloatLayout:
         canvas.before:
@@ -528,6 +530,7 @@
 
 <Entrar_coletor>:
     FloatLayout:
+        id: layout
         canvas.before:
             Color:
                 rgba: 1, 1, 1, 1
@@ -538,10 +541,10 @@
         MapView:
             id: mapview
             size_hint_y: None
-            height: root.height * 0.7  
-            lon: -34.914995688975644
-            lat: -8.050101840534602
-            zoom: 11
+            height: root.height * 0.7
+            lon: -34.92121073231193
+            lat: -8.209507364996888
+            zoom: 12
             pos_hint: {'top': 1}
 
         BoxLayout:
@@ -586,14 +589,6 @@
             size_hint: None, None
             size: 200, 400  
             pos_hint: {'center_x': 0.9, 'center_y': 0.15}
-
-        Label:
-            id: boas_vindas
-            text: '[b]Bem-vindo(a)[/b]'
-            markup: True
-            color: 0, 0, 0, 1
-            font_size: 24
-            pos_hint: {'center_x': 0.5, 'center_y': 0.24}
 
 <Solicitacoes>:
     FloatLayout:
@@ -697,6 +692,7 @@
 
 <Entrar_usuario>:
     FloatLayout:
+        id: layout
         canvas.before:
             Color:
                 rgba: 1, 1, 1, 1
@@ -826,12 +822,6 @@
             size: 200, 400  
             pos_hint: {'center_x': 0.9, 'center_y': 0.15}
 
-        Label:
-            id: boas_vindas
-            markup: True
-            color: 0, 0, 0, 1
-            font_size: 24
-            pos_hint: {'center_x': 0.5, 'center_y': 0.24}
 
 <Area_descarte>:
     FloatLayout:
