@@ -285,16 +285,28 @@ class Editar_conta_coletor(Screen):
         print(f"Perfil atualizado: Nome={nome}, Bio={bio}, Gênero={genero}, Link={link}")
 
 class Editar_conta(Screen):
-    def endereco(self):
-        self.manager.current = 'endereco'
+
+    def __init__(self, **kwargs):
+        super(Editar_conta, self).__init__(**kwargs)
+        self.app = MDApp.get_running_app()
 
     def salvar_perfil(self):
-        bio = self.ids.bio.text
-        nome = self.ids.nome.text
-        genero = self.ids.genero.text
-        link = self.ids.link.text
+        novo_nome = self.ids.nome_novo.text
+        novo_genero = self.ids.genero_novo.text
+        novo_tel = self.ids.tel_novo.text
+        
+        if novo_nome and novo_genero and novo_tel:
+            email = self.manager.get_screen('login_usuario').ids.email.text
+            if self.app.atualizar_usuario(email, novo_nome, novo_genero, novo_tel):
+                self.manager.current = 'perfil_do_usuario'
+            else:
+                toast('Erro: Não foi possível atualizar o perfil.')
+        else:
+            toast('Erro: Preencha todos os campos.')
 
-        print(f"Perfil atualizado: Nome={nome}, Bio={bio}, Gênero={genero}, Link={link}")
+
+    def endereco(self):
+        self.manager.current = 'endereco'
 
 class Rastrear_descarte(Screen):
     pass
@@ -468,6 +480,7 @@ class ReciclatechApp(MDApp):
                 toast('Erro: Email ou senha incorretos.')
         else:
             toast('Erro: Preencha todos os campos.')
+
       
 if __name__ == '__main__':
     ReciclatechApp().run()
