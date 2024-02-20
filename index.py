@@ -144,29 +144,29 @@ class Registro_usuario(Screen):
 class Entrar_coletor(Screen):
     mensagem = StringProperty("")
 
-def on_enter(self):
-    super(Entrar_usuario, self).on_enter()
-    try:
-        # Acessando o widget de entrada de e-mail diretamente pelo ID
-        email = self.ids.email.text
-        usuarios = db.child("schedule").get().val()  
-        if usuarios:
-            usuario_encontrado = None
-            for key, value in usuarios.items():
-                if value.get("email") == email:
-                    usuario_encontrado = value
-                    print("Usuário encontrado com o e-mail", email)
-                    break
-            if usuario_encontrado:
-                self.mensagem = f"[b]Bem-vindo, {usuario_encontrado['nome']}[/b]!"
-                boas_vindas_label = Label(text=self.mensagem, markup=True, color=(0, 0, 0, 1), font_size=24, pos_hint={'center_x': 0.5, 'center_y': 0.24})
-                self.ids.layout.add_widget(boas_vindas_label)
+    def on_enter(self, *args):
+        super(Entrar_coletor, self).on_enter(*args)
+        email = self.manager.get_screen('login_coletor').ids.email_input.text
+        try:
+            coletores = db.child("schedule").get().val()  
+            if coletores:
+                coletor_encontrado = None
+                for key, value in coletores.items():
+                    if value.get("email") == email:
+                        coletor_encontrado = value
+                        print("Coletor encontrado com o e-mail", email)
+                        break
+                if coletor_encontrado:
+                    self.mensagem = f"[b]Bem-vindo, {coletor_encontrado['nome']}[/b]!"
+                    boas_vindas_label = Label(text=self.mensagem, markup=True, color=(0, 0, 0, 1), font_size=24, pos_hint={'center_x': 0.5, 'center_y': 0.24})
+                    self.ids.layout.add_widget(boas_vindas_label)
+                else:
+                    print("Nenhum coletor encontrado com o e-mail", email)
             else:
-                print("Nenhum usuário encontrado com o e-mail", email)
-        else:
-            print("Nenhum usuário encontrado")
-    except Exception as e:
-        print("Ocorreu um erro durante a consulta:", e)
+                print("Nenhum coletor encontrado")
+        except Exception as e:
+            print("Ocorreu um erro durante a consulta:", e)
+
 
     def tela_coletor(self):
         super(Entrar_coletor, self).on_enter()
